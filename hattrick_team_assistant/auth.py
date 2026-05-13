@@ -2,9 +2,9 @@
 One-time OAuth 1.0a bootstrap for Hattrick CHPP.
 
 Run after your CHPP application is approved and you've filled consumer_key +
-consumer_secret into .chpp-credentials.json:
+consumer_secret into .chpp-credentials.json. From the repository root (the
+folder that contains this README and the hattrick_team_assistant/ package):
 
-    cd D:\\Claude\\Projects\\Hattrick\\hattrick-team-assistant
     python -m hattrick_team_assistant.auth
 
 Walks you through the standard OOB (out-of-band) OAuth flow:
@@ -53,7 +53,7 @@ def main() -> int:
         print(
             "ERROR: consumer_key not filled in. Open .chpp-credentials.json, paste "
             "the consumer key from your approved CHPP application, save, retry. "
-            "(Run from inside D:\\Claude\\Projects\\Hattrick\\hattrick-team-assistant\\)"
+            f"(Looking in current working directory: {Path.cwd()})"
         )
         return 2
 
