@@ -1,4 +1,4 @@
-# Team Assistant
+# Hattrick Team Assistant
 
 An open-source, locally-run analytical helper for Hattrick managers. Built originally for my own three teams under the manager account `robi_` (Hetvehely 158111, Wetzikon 2839340, Apa lanyai 3235631), published so other technically-minded Hattrick managers can clone, configure, and run it on their own machines.
 
