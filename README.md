@@ -18,10 +18,11 @@ hattrick-team-assistant/
 ├── .gitignore                      protects real credentials from being committed
 ├── .chpp-credentials.example.json  template, copy and fill in
 └── hattrick_team_assistant/        the Python package (importable name)
-    ├── __init__.py                 exports CHPPClient, CHPPError
+    ├── __init__.py                 exports CHPPClient, CHPPError, snapshot_team
     ├── chpp.py                     main client, one method per CHPP endpoint
     ├── auth.py                     one-time OAuth 1.0a bootstrap
-    └── cache.py                    tiny disk + memory cache for XML responses
+    ├── cache.py                    tiny disk + memory cache + readable index.json
+    └── snapshot.py                 archive a dated point-in-time capture of a team
 ```
 
 Project folder uses hyphens (matches the GitHub repo). Python package uses
@@ -74,6 +75,40 @@ underscores (Python identifier rule, hyphens not allowed).
    training = client.training(team_id=158111)
    ```
 
+## Team snapshots
+
+A snapshot is a dated, self-contained archive of one team's full CHPP state -
+the CHPP-helper equivalent of an HRF dump, but ~2 seconds instead of a JVM boot.
+Each endpoint's raw XML is written under `snapshots/<team_id>/<YYYY-MM-DD>/`
+plus a `manifest.json`.
+
+From the command line (run from the repo root):
+
+```
+python -m hattrick_team_assistant.snapshot 158111 2839340 3235631
+```
+
+From Python:
+
+```python
+from hattrick_team_assistant import CHPPClient, snapshot_team
+client = CHPPClient.from_credentials_file(".chpp-credentials.json")
+path = snapshot_team(client, 158111)   # -> snapshots/158111/2026-05-14/
+```
+
+Snapshots are force-fresh (they bypass the cache) and permanent until you delete
+them - unlike the cache, which auto-overwrites on TTL. Use snapshots when you
+want a point-in-time record to diff or revisit; use the cache for fast repeat
+queries within a working session.
+
+## Cache index
+
+The `cache/` folder holds hash-named `.xml` files plus an `index.json` that maps
+each hash to its endpoint, subject (e.g. `teamID=158111`), params, and fetch
+time. So the cache is browsable: open `index.json` to see what's cached and how
+fresh it is. The index also powers precise per-endpoint invalidation
+(`client.clear_cache()` still drops everything).
+
 ## Design notes
 
 - **Read-only by design.** No `set_lineup`, `place_bid` or any other endpoint
@@ -82,7 +117,7 @@ underscores (Python identifier rule, hyphens not allowed).
 - **OAuth 1.0a** as required by Hattrick CHPP. Each user runs the bootstrap
   once per Hattrick manager account they want to authorize.
 - **Cache, 2-tier** (memory + disk under `cache/`), invalidated by TTL per
-  endpoint (see `DEFAULT_TTL` in `chpp.py`).
+  endpoint (see `DEFAULT_TTL` in `chpp.py`), with a readable `index.json`.
 - **Throttle, 1 req/sec** minimum spacing between live calls. Well within
   CHPP rate limits.
 - **Errors as exceptions,** anything that's not a 200 OK with valid XML raises

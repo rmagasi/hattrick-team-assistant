@@ -114,13 +114,13 @@ class CHPPClient:
 
     # ---------- low-level call ----------
 
-    def _call(
+    def _request(
         self,
         endpoint: str,
         params: Optional[dict[str, Any]] = None,
         ttl: Optional[int] = None,
-    ) -> dict:
-        """Make a CHPP call, possibly served from cache. Returns parsed dict."""
+    ) -> str:
+        """Make a CHPP call, possibly served from cache. Returns the raw XML text."""
         params = dict(params or {})
         params["file"] = endpoint
         params.setdefault("version", "1.0")
@@ -132,7 +132,7 @@ class CHPPClient:
         if ttl > 0:
             cached = self._cache.get(endpoint, params, ttl=ttl)
             if cached is not None:
-                return self._parse(cached)
+                return cached
 
         # Throttle live calls
         elapsed = time.time() - self._last_request_at
@@ -157,7 +157,23 @@ class CHPPClient:
 
         if ttl > 0:
             self._cache.put(endpoint, params, text)
-        return self._parse(text)
+        return text
+
+    def _call(
+        self,
+        endpoint: str,
+        params: Optional[dict[str, Any]] = None,
+        ttl: Optional[int] = None,
+    ) -> dict:
+        """Make a CHPP call and return the parsed dict."""
+        return self._parse(self._request(endpoint, params, ttl))
+
+    def fetch_raw(self, endpoint: str, ttl: Optional[int] = None, **params) -> str:
+        """Fetch any CHPP endpoint and return the raw XML text (not parsed).
+        Used by the snapshot module to archive responses verbatim. Example:
+            client.fetch_raw("economy", teamID=158111)
+        """
+        return self._request(endpoint, params, ttl)
 
     @staticmethod
     def _parse(xml_text: str) -> dict:

@@ -5,6 +5,9 @@
 cache/
 *.cache
 
+# Team snapshots (contain your team data, keep local)
+snapshots/
+
 # Python
 __pycache__/
 *.py[cod]
